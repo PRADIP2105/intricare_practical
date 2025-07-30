@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-xl mx-auto py-8 sm:px-6 lg:px-8 bg-white shadow rounded-lg">
-    <h1 class="text-2xl font-bold mb-6">Contact Details</h1>
+<div class="max-w-3xl mx-auto py-16 sm:px-8 lg:px-12 bg-white shadow rounded-lg space-y-12">
+    <h1 class="text-3xl font-bold mb-12">Contact Details</h1>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div>
