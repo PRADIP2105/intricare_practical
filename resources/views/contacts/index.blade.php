@@ -9,10 +9,10 @@
         </a>
     </div>
 
-    <form id="filterForm" class="mb-6 flex space-x-4">
-        <input type="text" name="name" placeholder="Name" value="{{ request('name') }}" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-1/3" />
-        <input type="text" name="email" placeholder="Email" value="{{ request('email') }}" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-1/3" />
-        <select name="gender" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-1/6">
+    <form id="filterForm" class="mb-6 flex flex-wrap gap-4">
+        <input type="text" name="name" placeholder="Name" value="{{ request('name') }}" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 flex-grow min-w-[200px]" />
+        <input type="text" name="email" placeholder="Email" value="{{ request('email') }}" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 flex-grow min-w-[200px]" />
+        <select name="gender" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-40">
             <option value="">Select Gender</option>
             <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
             <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
@@ -23,82 +23,11 @@
         </button>
     </form>
 
-    <script>
-    document.getElementById('filterForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-        const params = new URLSearchParams();
-        for (const pair of formData.entries()) {
-            if(pair[1]) {
-                params.append(pair[0], pair[1]);
-            }
-        }
-        fetch('{{ route("contacts.index") }}?' + params.toString(), {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.querySelector('#contactsTable tbody');
-            tbody.innerHTML = '';
-            data.data.forEach(contact => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${contact.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.phone}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.gender.charAt(0).toUpperCase() + contact.gender.slice(1)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <a href="/contacts/${contact.id}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                        <a href="/contacts/${contact.id}/edit" class="text-yellow-600 hover:text-yellow-900">Edit</a>
-                        <form action="/contacts/${contact.id}" method="POST" class="inline-block deleteForm">
-                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                        </form>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            attachDeleteHandlers();
-        });
-    });
-
-    function attachDeleteHandlers() {
-        const deleteForms = document.querySelectorAll('.deleteForm');
-        deleteForms.forEach(form => {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to delete this contact?')) {
-                    fetch(this.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            _method: 'DELETE'
-                        })
-                    }).then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        form.closest('tr').remove();
-                    });
-                }
-            });
-        });
-    }
-
-    attachDeleteHandlers();
-    </script>
-
     <div class="overflow-x-auto bg-white shadow rounded-lg">
         <table class="min-w-full divide-y divide-gray-200" id="contactsTable">
             <thead class="bg-gray-50">
                 <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
@@ -111,6 +40,7 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse ($contacts as $contact)
                 <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $contacts->firstItem() + $loop->index }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $contact->name }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $contact->email }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $contact->phone }}</td>
@@ -139,121 +69,162 @@
     <div class="mt-4">
         {{ $contacts->links() }}
     </div>
-</div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const deleteForms = document.querySelectorAll('.deleteForm');
-        const formMessage = document.createElement('div');
-        formMessage.id = 'formMessage';
-        formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-green-100 text-green-800 hidden';
-        document.body.appendChild(formMessage);
+    $(document).ready(function() {
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var params = form.serialize();
+            $.ajax({
+                url: '{{ route("contacts.index") }}',
+                type: 'GET',
+                data: params,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    var tbody = $('#contactsTable tbody');
+                    tbody.empty();
+                    if(data.data.length === 0) {
+                        tbody.append('<tr><td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">No records found.</td></tr>');
+                    } else {
+                        $.each(data.data, function(index, contact) {
+                            var tr = $('<tr></tr>');
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">' + contact.name + '</td>');
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + contact.email + '</td>');
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + contact.phone + '</td>');
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + contact.gender.charAt(0).toUpperCase() + contact.gender.slice(1) + '</td>');
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">' +
+                                '<a href="/contacts/' + contact.id + '" class="text-indigo-600 hover:text-indigo-900">View</a> ' +
+                                '<a href="/contacts/' + contact.id + '/edit" class="text-yellow-600 hover:text-yellow-900">Edit</a> ' +
+                                '<form action="/contacts/' + contact.id + '" method="POST" class="inline-block deleteForm">' +
+                                '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
+                                '<input type="hidden" name="_method" value="DELETE">' +
+                                '<button type="submit" class="text-red-600 hover:text-red-900">Delete</button>' +
+                                '</form>' +
+                                '</td>');
+                            tbody.append(tr);
+                        });
+                    }
+                    attachDeleteHandlers();
+                }
+            });
+        });
 
-        function showMessage(message, isError = false) {
-            formMessage.textContent = message;
-            formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm ' + (isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800');
-            formMessage.classList.remove('hidden');
-            setTimeout(() => {
-                formMessage.classList.add('hidden');
-            }, 5000);
-        }
-
-            deleteForms.forEach(form => {
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const currentForm = this;
-                    // Custom confirm box
-                    // Remove window.confirm and use custom modal
-                    if (!document.getElementById('customConfirmModal')) {
-                        showCustomConfirm('Are you sure you want to delete this contact?', () => {
-                            fetch(currentForm.action, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    _method: 'DELETE'
-                                })
-                            }).then(response => response.json())
-                            .then(data => {
+        function attachDeleteHandlers() {
+            $('.deleteForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                var currentForm = $(this);
+                if ($('#customConfirmModal').length === 0) {
+                    showCustomConfirm('Are you sure you want to delete this contact?', function() {
+                        $.ajax({
+                            url: currentForm.attr('action'),
+                            type: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                _method: 'DELETE'
+                            }),
+                            success: function(data) {
                                 if(data.message) {
                                     showMessage(data.message);
                                     currentForm.closest('tr').remove();
                                 }
-                            })
-                            .catch(() => {
+                            },
+                            error: function() {
                                 showMessage('An error occurred. Please try again.', true);
-                            });
+                            }
                         });
-                    }
-                });
-
-            // Custom confirm modal implementation
-            function showCustomConfirm(message, onConfirm) {
-                // Create modal elements
-                const modalOverlay = document.createElement('div');
-                modalOverlay.style.position = 'fixed';
-                modalOverlay.style.top = '0';
-                modalOverlay.style.left = '0';
-                modalOverlay.style.width = '100%';
-                modalOverlay.style.height = '100%';
-                modalOverlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                modalOverlay.style.display = 'flex';
-                modalOverlay.style.justifyContent = 'center';
-                modalOverlay.style.alignItems = 'center';
-                modalOverlay.style.zIndex = '1000';
-
-                const modalBox = document.createElement('div');
-                modalBox.style.backgroundColor = '#fff';
-                modalBox.style.padding = '20px';
-                modalBox.style.borderRadius = '8px';
-                modalBox.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                modalBox.style.maxWidth = '400px';
-                modalBox.style.width = '90%';
-                modalBox.style.textAlign = 'center';
-
-                const msg = document.createElement('p');
-                msg.textContent = message;
-                msg.style.marginBottom = '20px';
-
-                const btnConfirm = document.createElement('button');
-                btnConfirm.textContent = 'Confirm';
-                btnConfirm.style.marginRight = '10px';
-                btnConfirm.style.padding = '8px 16px';
-                btnConfirm.style.backgroundColor = '#2563eb';
-                btnConfirm.style.color = '#fff';
-                btnConfirm.style.border = 'none';
-                btnConfirm.style.borderRadius = '4px';
-                btnConfirm.style.cursor = 'pointer';
-
-                const btnCancel = document.createElement('button');
-                btnCancel.textContent = 'Cancel';
-                btnCancel.style.padding = '8px 16px';
-                btnCancel.style.backgroundColor = '#e5e7eb';
-                btnCancel.style.color = '#000';
-                btnCancel.style.border = 'none';
-                btnCancel.style.borderRadius = '4px';
-                btnCancel.style.cursor = 'pointer';
-
-                modalBox.appendChild(msg);
-                modalBox.appendChild(btnConfirm);
-                modalBox.appendChild(btnCancel);
-                modalOverlay.appendChild(modalBox);
-                document.body.appendChild(modalOverlay);
-
-                btnConfirm.addEventListener('click', () => {
-                    onConfirm();
-                    document.body.removeChild(modalOverlay);
-                });
-
-                btnCancel.addEventListener('click', () => {
-                    document.body.removeChild(modalOverlay);
-                });
-            }
+                    });
+                }
             });
-        });
+        }
+
+        function showMessage(message, isError) {
+            isError = isError || false;
+            var formMessage = $('#formMessage');
+            if(formMessage.length === 0) {
+                formMessage = $('<div id="formMessage" class="fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm"></div>');
+                $('body').append(formMessage);
+            }
+            formMessage.text(message);
+            formMessage.removeClass('bg-green-100 text-green-800 bg-red-100 text-red-800');
+            if(isError) {
+                formMessage.addClass('bg-red-100 text-red-800');
+            } else {
+                formMessage.addClass('bg-green-100 text-green-800');
+            }
+            formMessage.show();
+            setTimeout(function() {
+                formMessage.hide();
+            }, 5000);
+        }
+
+        function showCustomConfirm(message, onConfirm) {
+            var modalOverlay = $('<div id="customConfirmModal"></div>').css({
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 1000
+            });
+
+            var modalBox = $('<div></div>').css({
+                backgroundColor: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                maxWidth: '400px',
+                width: '90%',
+                textAlign: 'center'
+            });
+
+            var msg = $('<p></p>').text(message).css('marginBottom', '20px');
+
+            var btnConfirm = $('<button>Confirm</button>').css({
+                marginRight: '10px',
+                padding: '8px 16px',
+                backgroundColor: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+            });
+
+            var btnCancel = $('<button>Cancel</button>').css({
+                padding: '8px 16px',
+                backgroundColor: '#e5e7eb',
+                color: '#000',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+            });
+
+            modalBox.append(msg, btnConfirm, btnCancel);
+            modalOverlay.append(modalBox);
+            $('body').append(modalOverlay);
+
+            btnConfirm.on('click', function() {
+                onConfirm();
+                modalOverlay.remove();
+            });
+
+            btnCancel.on('click', function() {
+                modalOverlay.remove();
+            });
+        }
+
+        attachDeleteHandlers();
     });
     </script>
 @endsection
