@@ -12,7 +12,8 @@ class ContactController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Contact::query();
+        $user = $request->user();
+        $query = Contact::where('user_id', $user->id);
 
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
@@ -46,6 +47,8 @@ class ContactController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:contacts,email',
@@ -67,6 +70,8 @@ class ContactController extends Controller
         if ($request->hasFile('additional_file')) {
             $contactData['additional_file'] = $request->file('additional_file')->store('additional_files', 'public');
         }
+
+        $contactData['user_id'] = $user->id;
 
         $contact = Contact::create($contactData);
 
@@ -90,7 +95,8 @@ class ContactController extends Controller
      */
     public function show(string $id)
     {
-        $contact = Contact::with('customFields')->findOrFail($id);
+        $user = auth()->user();
+        $contact = Contact::with('customFields')->where('user_id', $user->id)->findOrFail($id);
         return view('contacts.show', compact('contact'));
     }
 
@@ -99,7 +105,8 @@ class ContactController extends Controller
      */
     public function edit(string $id)
     {
-        $contact = Contact::with('customFields')->findOrFail($id);
+        $user = auth()->user();
+        $contact = Contact::with('customFields')->where('user_id', $user->id)->findOrFail($id);
         return view('contacts.edit', compact('contact'));
     }
 
@@ -108,7 +115,8 @@ class ContactController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $contact = Contact::findOrFail($id);
+        $user = auth()->user();
+        $contact = Contact::where('user_id', $user->id)->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -171,7 +179,8 @@ class ContactController extends Controller
      */
     public function destroy(string $id)
     {
-        $contact = Contact::findOrFail($id);
+        $user = auth()->user();
+        $contact = Contact::where('user_id', $user->id)->findOrFail($id);
         $contact->delete();
 
         if (request()->ajax()) {

@@ -16,10 +16,16 @@ class Contact extends Model
         'gender',
         'profile_image',
         'additional_file',
+        'user_id',
     ];
 
     public function customFields()
     {
         return $this->hasMany(ContactCustomField::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

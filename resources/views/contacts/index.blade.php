@@ -92,6 +92,8 @@
                     } else {
                         $.each(data.data, function(index, contact) {
                             var tr = $('<tr></tr>');
+                            var recordNumber = data.from + index;
+                            tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + recordNumber + '</td>');
                             tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">' + contact.name + '</td>');
                             tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + contact.email + '</td>');
                             tr.append('<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">' + contact.phone + '</td>');
