@@ -7,7 +7,7 @@
     $formMethod = $isEdit ? 'PUT' : 'POST';
 @endphp
 
-<div class="max-w-xl mx-auto py-8 sm:px-6 lg:px-8 bg-white shadow rounded-lg">
+<div class="max-w-4xl mx-auto py-12 sm:px-8 lg:px-12 bg-white shadow rounded-lg mt-6">
     <h1 class="text-2xl font-bold mb-6">{{ $isEdit ? 'Edit Contact' : 'Create Contact' }}</h1>
 
     <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="contactForm" class="space-y-6">
@@ -69,7 +69,7 @@
             <div>
                 <label for="profile_image" class="block text-sm font-medium text-gray-700">Profile Image</label>
                 @if($isEdit && $contact->profile_image)
-                    <img src="{{ asset('storage/' . $contact->profile_image) }}" alt="Profile Image" class="mb-2 w-32 h-32 object-cover rounded-md">
+                    <img src="{{ asset('storage/' . $contact->profile_image) }}" alt="Profile Image" class="mb-2 w-32 h-32 object-cover rounded-md" onerror="this.style.display='none'">
                 @endif
                 <input type="file" name="profile_image" id="profile_image"
                     class="mt-1 block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4
@@ -82,7 +82,7 @@
             <div>
                 <label for="additional_file" class="block text-sm font-medium text-gray-700">Additional File</label>
                 @if($isEdit && $contact->additional_file)
-                    <a href="{{ asset('storage/' . $contact->additional_file) }}" class="block mb-2 text-blue-600 hover:underline" target="_blank">Download File</a>
+                    <a href="{{ url('storage/' . $contact->additional_file) }}" class="block mb-2 text-blue-600 hover:underline" target="_blank" download>Download File</a>
                 @endif
                 <input type="file" name="additional_file" id="additional_file"
                     class="mt-1 block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4
@@ -96,14 +96,14 @@
             @if($isEdit && $contact->customFields && $contact->customFields->count() > 0)
                 @foreach($contact->customFields->unique('field_name') as $index => $customField)
                     <div class="custom-field mb-4" data-field-name="{{ $customField->field_name }}">
-                        <input type="text" name="custom_fields[{{ $index }}][field_name]" placeholder="Field Name" value="{{ $customField->field_name }}" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" required>
+                        <input type="text" name="custom_fields[{{ $index }}][field_name]" placeholder="Field Name" value="{{ $customField->field_name }}" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
                         <input type="text" name="custom_fields[{{ $index }}][field_value]" placeholder="Field Value" value="{{ $customField->field_value }}" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
                         <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
                     </div>
                 @endforeach
             @else
                 <div class="custom-field mb-4">
-                    <input type="text" name="custom_fields[0][field_name]" placeholder="Field Name" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" required>
+                    <input type="text" name="custom_fields[0][field_name]" placeholder="Field Name" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
                     <input type="text" name="custom_fields[0][field_value]" placeholder="Field Value" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
                     <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
                 </div>

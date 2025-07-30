@@ -54,7 +54,7 @@ class ContactController extends Controller
             'profile_image' => 'nullable|image|max:2048',
             'additional_file' => 'nullable|file|max:5120',
             'custom_fields' => 'nullable|array',
-            'custom_fields.*.field_name' => 'required|string|max:255',
+            'custom_fields.*.field_name' => 'nullable|string|max:255',
             'custom_fields.*.field_value' => 'nullable|string',
         ]);
 
@@ -72,7 +72,9 @@ class ContactController extends Controller
 
         if (!empty($validated['custom_fields'])) {
             foreach ($validated['custom_fields'] as $field) {
-                $contact->customFields()->create($field);
+                if (!empty($field['field_name'])) {
+                    $contact->customFields()->create($field);
+                }
             }
         }
 
@@ -117,7 +119,7 @@ class ContactController extends Controller
             'additional_file' => 'nullable|file|max:5120',
             'custom_fields' => 'nullable|array',
             'custom_fields.*.id' => 'nullable|exists:contact_custom_fields,id',
-            'custom_fields.*.field_name' => 'required|string|max:255',
+            'custom_fields.*.field_name' => 'nullable|string|max:255',
             'custom_fields.*.field_value' => 'nullable|string',
         ]);
 
@@ -135,15 +137,25 @@ class ContactController extends Controller
 
         // Update or create custom fields
         if (!empty($validated['custom_fields'])) {
+            $existingFieldIds = $contact->customFields()->pluck('id')->toArray();
+            $receivedFieldIds = [];
             foreach ($validated['custom_fields'] as $field) {
                 if (isset($field['id'])) {
+                    $receivedFieldIds[] = $field['id'];
                     $customField = $contact->customFields()->find($field['id']);
                     if ($customField) {
                         $customField->update($field);
                     }
                 } else {
-                    $contact->customFields()->create($field);
+                    if (!empty($field['field_name'])) {
+                        $contact->customFields()->create($field);
+                    }
                 }
+            }
+            // Delete custom fields that were removed in the form
+            $fieldsToDelete = array_diff($existingFieldIds, $receivedFieldIds);
+            if (!empty($fieldsToDelete)) {
+                $contact->customFields()->whereIn('id', $fieldsToDelete)->delete();
             }
         }
 

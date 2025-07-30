@@ -109,7 +109,7 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                @foreach ($contacts as $contact)
+                @forelse ($contacts as $contact)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $contact->name }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $contact->email }}</td>
@@ -125,7 +125,13 @@
                         </form>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                        No records found.
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -135,31 +141,119 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const deleteForms = document.querySelectorAll('.deleteForm');
-    deleteForms.forEach(form => {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (confirm('Are you sure you want to delete this contact?')) {
-                fetch(this.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        _method: 'DELETE'
-                    })
-                }).then(response => response.json())
-                .then(data => {
-                    alert(data.message);
-                    location.reload();
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteForms = document.querySelectorAll('.deleteForm');
+        const formMessage = document.createElement('div');
+        formMessage.id = 'formMessage';
+        formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-green-100 text-green-800 hidden';
+        document.body.appendChild(formMessage);
+
+        function showMessage(message, isError = false) {
+            formMessage.textContent = message;
+            formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm ' + (isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800');
+            formMessage.classList.remove('hidden');
+            setTimeout(() => {
+                formMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const currentForm = this;
+                    // Custom confirm box
+                    // Remove window.confirm and use custom modal
+                    if (!document.getElementById('customConfirmModal')) {
+                        showCustomConfirm('Are you sure you want to delete this contact?', () => {
+                            fetch(currentForm.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    _method: 'DELETE'
+                                })
+                            }).then(response => response.json())
+                            .then(data => {
+                                if(data.message) {
+                                    showMessage(data.message);
+                                    currentForm.closest('tr').remove();
+                                }
+                            })
+                            .catch(() => {
+                                showMessage('An error occurred. Please try again.', true);
+                            });
+                        });
+                    }
+                });
+
+            // Custom confirm modal implementation
+            function showCustomConfirm(message, onConfirm) {
+                // Create modal elements
+                const modalOverlay = document.createElement('div');
+                modalOverlay.style.position = 'fixed';
+                modalOverlay.style.top = '0';
+                modalOverlay.style.left = '0';
+                modalOverlay.style.width = '100%';
+                modalOverlay.style.height = '100%';
+                modalOverlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modalOverlay.style.display = 'flex';
+                modalOverlay.style.justifyContent = 'center';
+                modalOverlay.style.alignItems = 'center';
+                modalOverlay.style.zIndex = '1000';
+
+                const modalBox = document.createElement('div');
+                modalBox.style.backgroundColor = '#fff';
+                modalBox.style.padding = '20px';
+                modalBox.style.borderRadius = '8px';
+                modalBox.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                modalBox.style.maxWidth = '400px';
+                modalBox.style.width = '90%';
+                modalBox.style.textAlign = 'center';
+
+                const msg = document.createElement('p');
+                msg.textContent = message;
+                msg.style.marginBottom = '20px';
+
+                const btnConfirm = document.createElement('button');
+                btnConfirm.textContent = 'Confirm';
+                btnConfirm.style.marginRight = '10px';
+                btnConfirm.style.padding = '8px 16px';
+                btnConfirm.style.backgroundColor = '#2563eb';
+                btnConfirm.style.color = '#fff';
+                btnConfirm.style.border = 'none';
+                btnConfirm.style.borderRadius = '4px';
+                btnConfirm.style.cursor = 'pointer';
+
+                const btnCancel = document.createElement('button');
+                btnCancel.textContent = 'Cancel';
+                btnCancel.style.padding = '8px 16px';
+                btnCancel.style.backgroundColor = '#e5e7eb';
+                btnCancel.style.color = '#000';
+                btnCancel.style.border = 'none';
+                btnCancel.style.borderRadius = '4px';
+                btnCancel.style.cursor = 'pointer';
+
+                modalBox.appendChild(msg);
+                modalBox.appendChild(btnConfirm);
+                modalBox.appendChild(btnCancel);
+                modalOverlay.appendChild(modalBox);
+                document.body.appendChild(modalOverlay);
+
+                btnConfirm.addEventListener('click', () => {
+                    onConfirm();
+                    document.body.removeChild(modalOverlay);
+                });
+
+                btnCancel.addEventListener('click', () => {
+                    document.body.removeChild(modalOverlay);
                 });
             }
+            });
         });
     });
-});
-</script>
+    </script>
 @endsection
