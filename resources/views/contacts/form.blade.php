@@ -96,18 +96,18 @@
             @if($isEdit && $contact->customFields && $contact->customFields->count() > 0)
                 @foreach($contact->customFields->unique('field_name') as $index => $customField)
                     <div class="custom-field mb-4" data-field-name="{{ $customField->field_name }}">
-                        <input type="text" name="custom_fields[{{ $index }}][field_name]" placeholder="Field Name" value="{{ $customField->field_name }}" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
-                        <input type="text" name="custom_fields[{{ $index }}][field_value]" placeholder="Field Value" value="{{ $customField->field_value }}" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
-                        <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
-                    </div>
-                @endforeach
-            @else
-                <div class="custom-field mb-4">
-                    <input type="text" name="custom_fields[0][field_name]" placeholder="Field Name" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
-                    <input type="text" name="custom_fields[0][field_value]" placeholder="Field Value" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
+                    <input type="text" name="custom_fields[{{ $index }}][field_name]" placeholder="Field Name" value="{{ old('custom_fields.' . $index . '.field_name', $customField->field_name) }}" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
+                    <input type="text" name="custom_fields[{{ $index }}][field_value]" placeholder="Field Value" value="{{ old('custom_fields.' . $index . '.field_value', $customField->field_value) }}" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
                     <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
                 </div>
-            @endif
+            @endforeach
+        @else
+            <div class="custom-field mb-4">
+                <input type="text" name="custom_fields[0][field_name]" placeholder="Field Name" value="{{ old('custom_fields.0.field_name') }}" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" autocomplete="off">
+                <input type="text" name="custom_fields[0][field_value]" placeholder="Field Value" value="{{ old('custom_fields.0.field_value') }}" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
+                <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
+            </div>
+        @endif
         </div>
         <button type="button" id="addCustomFieldBtn" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 mb-6">Add Custom Field</button>
 

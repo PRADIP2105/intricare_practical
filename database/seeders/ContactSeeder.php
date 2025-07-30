@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Contact;
+use App\Models\User;
 
 class ContactSeeder extends Seeder
 {
@@ -12,6 +13,8 @@ class ContactSeeder extends Seeder
      */
     public function run(): void
     {
+        $user = User::first();
+
         $contacts = [
             ['name' => 'John Doe', 'email' => 'john@example.com', 'phone' => '1234567890', 'gender' => 'male'],
             ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'phone' => '2345678901', 'gender' => 'female'],
@@ -31,6 +34,7 @@ class ContactSeeder extends Seeder
         ];
 
         foreach ($contacts as $contact) {
+            $contact['user_id'] = $user ? $user->id : null;
             Contact::create($contact);
         }
     }
