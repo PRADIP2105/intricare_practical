@@ -14,8 +14,12 @@ class ContactController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'gender' => 'nullable|in:male,female,other',
+        ]);
+
         $user = $request->user();
-        $query = Contact::where('user_id', $user->id);
+        $query = Contact::where('user_id', $user->id)->whereNull('deleted_at');
 
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
@@ -23,8 +27,25 @@ class ContactController extends Controller
         if ($request->filled('email')) {
             $query->where('email', 'like', '%' . $request->email . '%');
         }
+        if ($request->filled('phone')) {
+            $query->where('phone', 'like', '%' . $request->phone . '%');
+        }
         if ($request->filled('gender')) {
             $query->where('gender', $request->gender);
+        }
+        if ($request->filled('status')) {
+            $status = strtolower($request->status);
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+        if ($request->filled('custom_field')) {
+            $customFieldValue = $request->custom_field;
+            $query->whereHas('customFields', function ($q) use ($customFieldValue) {
+                $q->where('field_value', 'like', '%' . $customFieldValue . '%');
+            });
         }
 
         $contacts = $query->with('customFields')->orderByDesc('id')->paginate(10);
@@ -124,7 +145,7 @@ class ContactController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:contacts,email,' . $contact->id,
             'phone' => 'required|string|max:20',
-            'gender' => 'nullable|in:male,female,other',
+            'gender' => 'required|nullable|in:male,female,other',
             'profile_image' => 'nullable|image|max:2048',
             'additional_file' => 'nullable|file|max:5120',
             'custom_fields' => 'nullable|array',
