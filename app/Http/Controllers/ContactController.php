@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -25,7 +27,7 @@ class ContactController extends Controller
             $query->where('gender', $request->gender);
         }
 
-        $contacts = $query->with('customFields')->paginate(10);
+        $contacts = $query->with('customFields')->orderByDesc('id')->paginate(10);
 
         if ($request->ajax()) {
             return response()->json($contacts);
@@ -96,7 +98,7 @@ class ContactController extends Controller
     public function show(string $id)
     {
         $user = auth()->user();
-        $contact = Contact::with('customFields')->where('user_id', $user->id)->findOrFail($id);
+        $contact = Contact::with(['customFields', 'mergedInto'])->where('user_id', $user->id)->findOrFail($id);
         return view('contacts.show', compact('contact'));
     }
 
@@ -188,5 +190,100 @@ class ContactController extends Controller
         }
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully');
+    }
+
+    /**
+     * Show the merge modal to select master contact.
+     */
+    public function showMerge(Contact $contact)
+    {
+        $user = auth()->user();
+        // Get all contacts of the user except the one to merge
+        $contacts = Contact::where('user_id', $user->id)
+            ->where('id', '!=', $contact->id)
+            ->get();
+
+        return view('contacts.merge', compact('contact', 'contacts'));
+    }
+
+    /**
+     * Perform the merge of two contacts.
+     */
+    public function merge(Request $request, Contact $contact)
+    {
+        $user = auth()->user();
+
+        Log::info('Merge started for contact ID: ' . $contact->id);
+
+        $request->validate([
+            'master_contact_id' => 'required|exists:contacts,id',
+        ]);
+
+        $masterContact = Contact::where('user_id', $user->id)->findOrFail($request->master_contact_id);
+        $secondaryContact = $contact;
+
+        if ($masterContact->id === $secondaryContact->id) {
+            Log::warning('Master contact same as secondary contact: ' . $masterContact->id);
+            return redirect()->back()->withErrors('Master contact cannot be the same as the secondary contact.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            Log::info('Merging emails and phones');
+
+            if ($secondaryContact->email !== $masterContact->email) {
+                $existingEmails = $masterContact->customFields()->where('field_name', 'Additional Email')->pluck('field_value')->toArray();
+                if (!in_array($secondaryContact->email, $existingEmails)) {
+                    $masterContact->customFields()->create([
+                        'field_name' => 'Additional Email',
+                        'field_value' => $secondaryContact->email,
+                    ]);
+                }
+            }
+
+            if ($secondaryContact->phone !== $masterContact->phone) {
+                $existingPhones = $masterContact->customFields()->where('field_name', 'Additional Phone')->pluck('field_value')->toArray();
+                if (!in_array($secondaryContact->phone, $existingPhones)) {
+                    $masterContact->customFields()->create([
+                        'field_name' => 'Additional Phone',
+                        'field_value' => $secondaryContact->phone,
+                    ]);
+                }
+            }
+
+            Log::info('Merging custom fields');
+
+            $masterCustomFields = $masterContact->customFields()->pluck('field_value', 'field_name')->toArray();
+            $secondaryCustomFields = $secondaryContact->customFields()->pluck('field_value', 'field_name')->toArray();
+
+            foreach ($secondaryCustomFields as $fieldName => $fieldValue) {
+                if (!array_key_exists($fieldName, $masterCustomFields)) {
+                    $masterContact->customFields()->create([
+                        'field_name' => $fieldName,
+                        'field_value' => $fieldValue,
+                    ]);
+                } elseif ($masterCustomFields[$fieldName] !== $fieldValue) {
+                    $newValue = $masterCustomFields[$fieldName] . ', ' . $fieldValue;
+                    $customField = $masterContact->customFields()->where('field_name', $fieldName)->first();
+                    $customField->update(['field_value' => $newValue]);
+                }
+            }
+
+            Log::info('Marking secondary contact as merged/inactive');
+
+            $secondaryContact->update(['merged_into' => $masterContact->id, 'is_active' => false]);
+
+            DB::commit();
+
+            Log::info('Merge completed successfully');
+
+            return redirect()->route('contacts.index')->with('success', 'Contacts merged successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error merging contacts: ' . $e->getMessage());
+            return redirect()->back()->withErrors('An error occurred while merging contacts.');
+        }
     }
 }

@@ -167,17 +167,19 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => response.json())
         .then(data => {
-            if(data.message) {
-                formMessage.textContent = data.message;
-                formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-green-100 text-green-800';
-                formMessage.classList.remove('hidden');
-                if(!{{ $isEdit ? 'true' : 'false' }}) {
-                    form.reset();
+                if(data.message) {
+                    formMessage.textContent = data.message;
+                    formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-green-100 text-green-800';
+                    formMessage.classList.remove('hidden');
+                    if(!{{ $isEdit ? 'true' : 'false' }}) {
+                        form.reset();
+                        // Redirect to contacts list after successful creation
+                        window.location.href = "{{ route('contacts.index') }}";
+                    }
+                    setTimeout(() => {
+                        formMessage.classList.add('hidden');
+                    }, 10000);
                 }
-                setTimeout(() => {
-                    formMessage.classList.add('hidden');
-                }, 10000);
-            }
         })
         .catch(error => {
             formMessage.textContent = 'An error occurred. Please try again.';
