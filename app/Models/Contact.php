@@ -17,6 +17,8 @@ class Contact extends Model
         'profile_image',
         'additional_file',
         'user_id',
+        'merged_into',
+        'is_active',
     ];
 
     public function customFields()
@@ -27,5 +29,10 @@ class Contact extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function mergedInto()
+    {
+        return $this->belongsTo(Contact::class, 'merged_into');
     }
 }

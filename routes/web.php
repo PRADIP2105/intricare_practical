@@ -17,6 +17,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('contacts', \App\Http\Controllers\ContactController::class);
+
+    // Merge contacts routes
+    Route::get('contacts/{contact}/merge', [\App\Http\Controllers\ContactController::class, 'showMerge'])->name('contacts.showMerge');
+    Route::post('contacts/{contact}/merge', [\App\Http\Controllers\ContactController::class, 'merge'])->name('contacts.merge');
+
 });
 
 require __DIR__.'/auth.php';
