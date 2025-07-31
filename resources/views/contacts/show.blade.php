@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<h1 class="text-3xl font-bold mb-16"></h1>
 <div class="max-w-3xl mx-auto py-16 sm:px-8 lg:px-12 bg-white shadow rounded-lg space-y-12">
-    <h1 class="text-3xl font-bold mb-12">Contact Details</h1>
+    <h1 class="text-3xl font-bold mb-16">Contact Details</h1>
 
     @if(!$contact->is_active)
         <div class="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
