@@ -252,6 +252,18 @@ class ContactController extends Controller
                 }
             }
 
+            // Merge profile image if master does not have one and secondary has
+            if (empty($masterContact->profile_image) && !empty($secondaryContact->profile_image)) {
+                $masterContact->profile_image = $secondaryContact->profile_image;
+                $masterContact->save();
+            }
+
+            // Merge additional file if master does not have one and secondary has
+            if (empty($masterContact->additional_file) && !empty($secondaryContact->additional_file)) {
+                $masterContact->additional_file = $secondaryContact->additional_file;
+                $masterContact->save();
+            }
+
             Log::info('Merging custom fields');
 
             $masterCustomFields = $masterContact->customFields()->pluck('field_value', 'field_name')->toArray();
@@ -273,6 +285,7 @@ class ContactController extends Controller
             Log::info('Marking secondary contact as merged/inactive');
 
             $secondaryContact->update(['merged_into' => $masterContact->id, 'is_active' => false]);
+
 
             DB::commit();
 
