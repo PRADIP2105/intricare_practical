@@ -1,8 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
+<h1 class="text-3xl font-bold mb-16"></h1>
 <div class="max-w-3xl mx-auto py-16 sm:px-8 lg:px-12 bg-white shadow rounded-lg space-y-12">
-    <h1 class="text-3xl font-bold mb-12">Contact Details</h1>
+    <h1 class="text-3xl font-bold mb-16">Contact Details</h1>
+
+    @if(!$contact->is_active)
+        <div class="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            This contact has been merged into another contact: {{ $contact->mergedInto ? $contact->mergedInto->name : 'N/A' }}.
+        </div>
+    @endif
 
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div>
@@ -45,7 +52,12 @@
             @foreach($contact->customFields as $customField)
                 <div>
                     <h4 class="text-sm font-medium text-gray-500">{{ $customField->field_name }}</h4>
-                    <p class="mt-1 text-gray-900">{{ $customField->field_value }}</p>
+                    <p class="mt-1 text-gray-900">
+                        {{ $customField->field_value }}
+                        @if(strpos($customField->field_value, ',') !== false)
+                            <span class="text-xs text-blue-600 ml-2">(Merged values)</span>
+                        @endif
+                    </p>
                 </div>
             @endforeach
         </div>

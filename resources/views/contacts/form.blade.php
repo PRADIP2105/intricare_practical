@@ -45,6 +45,7 @@
                 <div class="flex space-x-4 text-sm">
                     @php
                         $gender = old('gender', $isEdit ? $contact->gender : '');
+                        $gender = old('gender', $isEdit ? $contact->gender : 'male');
                     @endphp
                     <label class="inline-flex items-center">
                         <input type="radio" name="gender" value="male" {{ $gender == 'male' ? 'checked' : '' }}
@@ -122,7 +123,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    let customFieldIndex = {{ $isEdit && $contact->customFields ? $contact->customFields->count() : 1 }};
+    let customFieldIndex = {{ $isEdit && isset($contact->customFields) && is_countable($contact->customFields) ? count($contact->customFields) : 1 }};
 
     document.getElementById('addCustomFieldBtn').addEventListener('click', function () {
         const container = document.getElementById('customFieldsContainer');
@@ -152,11 +153,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const formMessage = document.getElementById('formMessage');
 
     form.addEventListener('submit', function(e) {
+        
         e.preventDefault();
         formMessage.textContent = '';
         formMessage.classList.add('hidden');
         const formData = new FormData(form);
-
+        console.log("action link >> ",form.action);
         fetch(form.action, {
             method: '{{ $isEdit ? 'POST' : 'POST' }}',
             headers: {
@@ -165,7 +167,17 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else if (response.status === 422) {
+                return response.json().then(errData => {
+                    throw errData;
+                });
+            } else {
+                throw new Error('Network response was not ok.');
+            }
+        })
         .then(data => {
             if(data.message) {
                 formMessage.textContent = data.message;
@@ -173,6 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 formMessage.classList.remove('hidden');
                 if(!{{ $isEdit ? 'true' : 'false' }}) {
                     form.reset();
+                    // Redirect to contacts list after successful creation
+                    window.location.href = "{{ route('contacts.index') }}";
                 }
                 setTimeout(() => {
                     formMessage.classList.add('hidden');
@@ -180,7 +194,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .catch(error => {
-            formMessage.textContent = 'An error occurred. Please try again.';
+            if (error.errors) {
+                if (error.errors.email && error.errors.email.length > 0) {
+                    formMessage.textContent = error.errors.email[0];
+                } else if (error.errors.phone && error.errors.phone.length > 0) {
+                    formMessage.textContent = error.errors.phone[0];
+                } else {
+                    const firstErrorKey = Object.keys(error.errors)[0];
+                    formMessage.textContent = error.errors[firstErrorKey][0];
+                }
+            } else {
+                formMessage.textContent = 'An error occurred. Please try again.';
+            }
             formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-red-100 text-red-800';
             formMessage.classList.remove('hidden');
             setTimeout(() => {
