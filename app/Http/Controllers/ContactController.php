@@ -49,7 +49,7 @@ class ContactController extends Controller
         }
 
         $contacts = $query->with('customFields')->orderByDesc('id')->paginate(10);
-
+      
         if ($request->ajax()) {
             return response()->json($contacts);
         }
@@ -72,17 +72,24 @@ class ContactController extends Controller
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:contacts,email',
-            'phone' => 'required|string|max:20',
-            'gender' => 'nullable|in:male,female,other',
-            'profile_image' => 'nullable|image|max:2048',
-            'additional_file' => 'nullable|file|max:5120',
-            'custom_fields' => 'nullable|array',
-            'custom_fields.*.field_name' => 'nullable|string|max:255',
-            'custom_fields.*.field_value' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:contacts,email',
+                'phone' => ['required', 'regex:/^\d{10}$/', 'unique:contacts,phone'],
+                'gender' => 'nullable|in:male,female,other',
+                'profile_image' => 'nullable|image|max:2048',
+                'additional_file' => 'nullable|file|max:5120',
+                'custom_fields' => 'nullable|array',
+                'custom_fields.*.field_name' => 'nullable|string|max:255',
+                'custom_fields.*.field_value' => 'nullable|string',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['errors' => $e->errors()], 422);
+            }
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        }
 
         $contactData = $validated;
         unset($contactData['custom_fields']);
@@ -144,8 +151,8 @@ class ContactController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:contacts,email,' . $contact->id,
-            'phone' => 'required|string|max:20',
-            'gender' => 'required|nullable|in:male,female,other',
+            'phone' => ['required', 'regex:/^\d{10}$/', 'unique:contacts,phone,' . $contact->id],
+            'gender' => 'required|in:male,female,other',
             'profile_image' => 'nullable|image|max:2048',
             'additional_file' => 'nullable|file|max:5120',
             'custom_fields' => 'nullable|array',
