@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+   
     public function index(Request $request)
     {
         $request->validate([
@@ -57,17 +55,12 @@ class ContactController extends Controller
         return view('contacts.index', compact('contacts'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    
     public function create()
     {
         return view('contacts.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $user = $request->user();
@@ -120,9 +113,7 @@ class ContactController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Contact created successfully');
     }
 
-    /**
-     * Display the specified resource.
-     */
+   
     public function show(string $id)
     {
         $user = auth()->user();
@@ -130,9 +121,6 @@ class ContactController extends Controller
         return view('contacts.show', compact('contact'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $user = auth()->user();
@@ -140,9 +128,6 @@ class ContactController extends Controller
         return view('contacts.edit', compact('contact'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
@@ -204,9 +189,6 @@ class ContactController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $user = auth()->user();
@@ -220,9 +202,7 @@ class ContactController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully');
     }
 
-    /**
-     * Show the merge modal to select master contact.
-     */
+   
     public function showMerge(Contact $contact)
     {
         $user = auth()->user();
@@ -234,9 +214,7 @@ class ContactController extends Controller
         return view('contacts.merge', compact('contact', 'contacts'));
     }
 
-    /**
-     * Perform the merge of two contacts.
-     */
+    
     public function merge(Request $request, Contact $contact)
     {
         $user = auth()->user();

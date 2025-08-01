@@ -18,7 +18,7 @@
         <input type="text" name="name" placeholder="Name" value="{{ request('name') }}" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 flex-grow min-w-[200px]" />
         <input type="text" name="email" placeholder="Email" value="{{ request('email') }}" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 flex-grow min-w-[200px]" />
         <input type="text" name="phone" placeholder="Phone" value="{{ request('phone') }}" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 flex-grow min-w-[200px]" />
-        <select name="gender" required class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-40">
+        <select name="gender" class="rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 w-40">
             <option value="">Select Gender</option>
             <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
             <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
@@ -69,7 +69,7 @@
                         <a href="{{ route('contacts.show', $contact->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                         @if($contact->is_active)
                             <a href="{{ route('contacts.edit', $contact->id) }}" class="text-yellow-600 hover:text-yellow-900">Edit</a>
-                            <a href="#" class="text-green-600 hover:text-green-900 merge-contact" data-contact-id="{{ $contact->id }}">Merge</a>
+                           <!-- <a href="#" class="text-green-600 hover:text-green-900 merge-contact" data-contact-id="{{ $contact->id }}">Merge</a> -->
                         @else
                             <span class="text-gray-400 cursor-not-allowed" title="Merged contact cannot be edited">Edit</span>
                         @endif
@@ -270,11 +270,11 @@
             var form = $(this);
 
             // Validate gender select
-            var genderVal = form.find('select[name="gender"]').val();
-            if(genderVal === '') {
-                alert('Please select a gender option.');
-                return;
-            }
+            // var genderVal = form.find('select[name="gender"]').val();
+            // if(genderVal === '') {
+            //     alert('Please select a gender option.');
+            //     return;
+            // }
 
             $.ajax({
                 url: form.attr('action') || window.location.href,
