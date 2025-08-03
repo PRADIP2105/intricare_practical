@@ -19,6 +19,15 @@ class ContactController extends Controller
         $user = $request->user();
         $query = Contact::where('user_id', $user->id)->whereNull('deleted_at');
 
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('phone', 'like', '%' . $searchTerm . '%');
+            });
+        }
+        
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
@@ -49,15 +58,40 @@ class ContactController extends Controller
         $contacts = $query->with('customFields')->orderByDesc('id')->paginate(10);
       
         if ($request->ajax()) {
+            // Check if it's a request for just the table component
+            if ($request->has('component') && $request->component === 'table') {
+                // Get all request parameters except component and page
+                $params = $request->except('component', 'page');
+                
+                // Append the current request parameters to pagination links
+                foreach ($params as $key => $value) {
+                    if ($value !== null && $value !== '') {
+                        $contacts->appends($key, $value);
+                    }
+                }
+                
+                return view('contacts._table', compact('contacts'))->render();
+            }
             return response()->json($contacts);
         }
 
+        // For non-AJAX requests, also append parameters to pagination links
+        $params = $request->except('page');
+        foreach ($params as $key => $value) {
+            if ($value !== null && $value !== '') {
+                $contacts->appends($key, $value);
+            }
+        }
+        
         return view('contacts.index', compact('contacts'));
     }
 
     
-    public function create()
+    public function create(Request $request)
     {
+        if ($request->ajax()) {
+            return view('contacts.form', ['contact' => null])->render();
+        }
         return view('contacts.create');
     }
 
@@ -114,17 +148,25 @@ class ContactController extends Controller
     }
 
    
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $user = auth()->user();
         $contact = Contact::with(['customFields', 'mergedInto'])->where('user_id', $user->id)->findOrFail($id);
+        
+        if ($request->ajax()) {
+            return view('contacts.show', compact('contact'))->render();
+        }
         return view('contacts.show', compact('contact'));
     }
 
-    public function edit(string $id)
+    public function edit(Request $request, string $id)
     {
         $user = auth()->user();
         $contact = Contact::with('customFields')->where('user_id', $user->id)->findOrFail($id);
+        
+        if ($request->ajax()) {
+            return view('contacts.form', ['contact' => $contact])->render();
+        }
         return view('contacts.edit', compact('contact'));
     }
 
@@ -297,11 +339,22 @@ class ContactController extends Controller
 
             Log::info('Merge completed successfully');
 
+            // Check if it's an AJAX request
+            if (request()->ajax()) {
+                return response()->json(['message' => 'Contacts merged successfully.']);
+            }
+
             return redirect()->route('contacts.index')->with('success', 'Contacts merged successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error merging contacts: ' . $e->getMessage());
+            
+            // Check if it's an AJAX request
+            if (request()->ajax()) {
+                return response()->json(['error' => 'An error occurred while merging contacts.'], 500);
+            }
+            
             return redirect()->back()->withErrors('An error occurred while merging contacts.');
         }
     }
