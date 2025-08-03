@@ -1,13 +1,10 @@
-@extends('layouts.app')
-
-@section('content')
 @php
     $isEdit = isset($contact);
     $formAction = $isEdit ? route('contacts.update', $contact->id) : route('contacts.store');
     $formMethod = $isEdit ? 'PUT' : 'POST';
 @endphp
 
-<div class="max-w-4xl mx-auto py-12 sm:px-8 lg:px-12 bg-white shadow rounded-lg mt-6">
+<div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
     <h1 class="text-2xl font-bold mb-6">{{ $isEdit ? 'Edit Contact' : 'Create Contact' }}</h1>
 
     <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="contactForm" class="space-y-6">
@@ -113,106 +110,10 @@
         <button type="button" id="addCustomFieldBtn" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 mb-6">Add Custom Field</button>
 
         <div>
-            <button type="submit"
-                class="inline-flex justify-center py-1 px-3 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                {{ $isEdit ? 'Update Contact' : 'Save Contact' }}
-            </button>
+        <button type="submit"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            {{ $isEdit ? 'Update Contact' : 'Save Contact' }}
+        </button>
         </div>
     </form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    let customFieldIndex = {{ $isEdit && isset($contact->customFields) && is_countable($contact->customFields) ? count($contact->customFields) : 1 }};
-
-    document.getElementById('addCustomFieldBtn').addEventListener('click', function () {
-        const container = document.getElementById('customFieldsContainer');
-        const newField = document.createElement('div');
-        newField.classList.add('custom-field', 'mb-4');
-        newField.innerHTML = `
-            <input type="text" name="custom_fields[\${customFieldIndex}][field_name]" placeholder="Field Name" class="mb-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2" required>
-            <input type="text" name="custom_fields[\${customFieldIndex}][field_value]" placeholder="Field Value" class="block w-full rounded-md border-gray-300 shadow-sm px-3 py-2">
-            <button type="button" class="mt-1 inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 removeCustomField">Remove</button>
-        `;
-        container.appendChild(newField);
-        customFieldIndex++;
-
-        newField.querySelector('.removeCustomField').addEventListener('click', function () {
-            newField.remove();
-        });
-    });
-
-    document.querySelectorAll('.removeCustomField').forEach(button => {
-        button.addEventListener('click', function () {
-            this.parentElement.remove();
-        });
-    });
-
-    // AJAX form submission
-    const form = document.getElementById('contactForm');
-    const formMessage = document.getElementById('formMessage');
-
-    form.addEventListener('submit', function(e) {
-        
-        e.preventDefault();
-        formMessage.textContent = '';
-        formMessage.classList.add('hidden');
-        const formData = new FormData(form);
-        console.log("action link >> ",form.action);
-        fetch(form.action, {
-            method: '{{ $isEdit ? 'POST' : 'POST' }}',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else if (response.status === 422) {
-                return response.json().then(errData => {
-                    throw errData;
-                });
-            } else {
-                throw new Error('Network response was not ok.');
-            }
-        })
-        .then(data => {
-            if(data.message) {
-                formMessage.textContent = data.message;
-                formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-green-100 text-green-800';
-                formMessage.classList.remove('hidden');
-                if(!{{ $isEdit ? 'true' : 'false' }}) {
-                    form.reset();
-                    // Redirect to contacts list after successful creation
-                    window.location.href = "{{ route('contacts.index') }}";
-                }
-                setTimeout(() => {
-                    formMessage.classList.add('hidden');
-                }, 10000);
-            }
-        })
-        .catch(error => {
-            if (error.errors) {
-                if (error.errors.email && error.errors.email.length > 0) {
-                    formMessage.textContent = error.errors.email[0];
-                } else if (error.errors.phone && error.errors.phone.length > 0) {
-                    formMessage.textContent = error.errors.phone[0];
-                } else {
-                    const firstErrorKey = Object.keys(error.errors)[0];
-                    formMessage.textContent = error.errors[firstErrorKey][0];
-                }
-            } else {
-                formMessage.textContent = 'An error occurred. Please try again.';
-            }
-            formMessage.className = 'fixed bottom-5 right-5 max-w-xs p-4 rounded shadow-lg text-sm bg-red-100 text-red-800';
-            formMessage.classList.remove('hidden');
-            setTimeout(() => {
-                formMessage.classList.add('hidden');
-            }, 10000);
-        });
-    });
-});
-</script>
-@endsection
